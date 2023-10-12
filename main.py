@@ -2,23 +2,50 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter, date2num
+import matplotlib.colors as mcolors
 import csv
 import datetime
 
 
 def read_timeline_data(filename):
     events = []
+    colors = list(mcolors.TABLEAU_COLORS.values())
+    colors_count = len(colors)
+    categories = {}
     with open(filename, newline='') as file:
         reader = csv.DictReader(file)
         for row in reader:
             start_date = datetime.datetime.strptime(row['StartDate'], '%Y-%m-%d')
             end_date = datetime.datetime.strptime(row['EndDate'], '%Y-%m-%d')
+            category = row["Category"]
+            valence = int(row['Valence'])
+            if category in categories:
+                color, index = categories[category]
+            else:
+                color = colors.pop()
+                index = colors_count - len(colors)
+                categories[category] = color, index
+
             events.append({
                 'EventName': row['EventName'],
                 'StartDate': start_date,
                 'EndDate': end_date,
-                'Position': int(row['Position'])
+                'Position': index * valence,
+                'Color': color,
             })
+
+    positive_positions = {e["Position"] for e in events if e["Position"] > 0}
+    positive_positions = {p: idx+1 for idx, p in enumerate(positive_positions)}
+
+    negative_positions = {e["Position"] for e in events if e["Position"] < 0}
+    negative_positions = {p: -(idx+1) for idx, p in enumerate(negative_positions)}
+
+    for event in events:
+        if event["Position"] > 0:
+            event["Position"] = positive_positions[event["Position"]]
+        elif event["Position"] < 0:
+            event["Position"] = negative_positions[event["Position"]]
+
     return events
 
 
@@ -55,9 +82,10 @@ def plot_event(event, events_on_same_line, is_up):
 
     # Split the annotation text into multiple lines on whitespace
     event_name = event['EventName']
+    color = event['Color']
     lines = split_text_into_lines(event_name)
 
-    ax.plot([start_date, end_date], [y_position, y_position], marker='X', markersize=10)
+    ax.plot([start_date, end_date], [y_position, y_position], marker='X', markersize=10, color=color)
 
     # Place the annotation at the center of the line with multiple lines
     if is_up:
@@ -118,7 +146,7 @@ def setup_plot():
 def plot_timeline_data(timeline_data):
     # Sort events by start date
     timeline_data.sort(key=lambda x: x['StartDate'])
-    timeline_data.sort(key=lambda x: x['Position'])
+    timeline_data.sort(key=lambda x: abs(x['Position']))
 
     # Iterate over the list of events to plot them
     annotation_is_up = True
@@ -148,7 +176,7 @@ fig, ax = plt.subplots()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # Read the CSV file into a list of events
-    timeline_data = read_timeline_data('timeline_data.csv')
+    timeline_data = read_timeline_data('real_timeline_data.csv')
     setup_plot()
     plot_timeline_data(timeline_data)
 
