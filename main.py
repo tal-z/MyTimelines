@@ -1,15 +1,30 @@
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter, date2num
-import matplotlib.colors as mcolors
 import csv
 import datetime
+
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter, date2num
+
+from format_utils import *
+
+
+matplotlib.use('TkAgg')
 
 
 def read_timeline_data(filename):
     events = []
-    colors = list(mcolors.TABLEAU_COLORS.values())
+    colors = [
+        "#FF6B6B",  # Coral
+        "#FFD700",  # Gold
+        "#1E90FF",  # Dodger Blue
+        "#FFA07A",  # Light Salmon
+        "#FF69B4",  # Hot Pink
+        "#48D1CC",  # Medium Turquoise
+        "#98FB98",  # Pale Green
+        "#00BFFF",  # Deep Sky Blue
+        "#FFA500",  # Orange
+    ]
+
     colors_count = len(colors)
     categories = {}
     with open(filename, newline='') as file:
@@ -19,6 +34,7 @@ def read_timeline_data(filename):
             end_date = datetime.datetime.strptime(row['EndDate'], '%Y-%m-%d')
             category = row["Category"]
             valence = int(row['Valence'])
+            force_annotation = bool(row["ForceAnnotation"])
             if category in categories:
                 color, index = categories[category]
             else:
@@ -32,6 +48,8 @@ def read_timeline_data(filename):
                 'EndDate': end_date,
                 'Position': index * valence,
                 'Color': color,
+                'Category': category,
+                'ForceAnnotation': force_annotation,
             })
 
     positive_positions = {e["Position"] for e in events if e["Position"] > 0}
@@ -46,37 +64,21 @@ def read_timeline_data(filename):
         elif event["Position"] < 0:
             event["Position"] = negative_positions[event["Position"]]
 
-    return events
+    for category in categories:
+        events_in_category = [e for e in events if e['Category'] == category]
+        for idx, event in enumerate(events_in_category):
+            event["Color"] = darken_color(event["Color"], idx * (1/(len(events_in_category)//2)))
+
+    y_lim = -(len(negative_positions)+1), len(positive_positions)+1
+    return events, y_lim
 
 
-def split_text_into_lines(text, max_line_length=25):
-    words = text.split()
-    lines = []
-    current_line = ""
-
-    for word in words:
-        if len(current_line) + len(word) + 1 <= max_line_length:
-            if current_line:
-                current_line += " " + word
-            else:
-                current_line = word
-        else:
-            lines.append(current_line)
-            current_line = word
-
-    if current_line:
-        lines.append(current_line)
-
-    return lines
-
-
-def plot_event(event, events_on_same_line, is_up):
+def plot_event(event):
     start_date = date2num(event['StartDate'])
     end_date = date2num(event['EndDate'])
-    position = event['Position']
+    y_position = event['Position']
 
     # Calculate the vertical position for the event
-    y_position = position + events_on_same_line * 0  # Adjust the spacing factor
     width = end_date - start_date
     center_x = start_date + width / 2  # Calculate the center of the line
 
@@ -85,13 +87,9 @@ def plot_event(event, events_on_same_line, is_up):
     color = event['Color']
     lines = split_text_into_lines(event_name)
 
-    ax.plot([start_date, end_date], [y_position, y_position], marker='X', markersize=10, color=color)
+    ax.plot([start_date, end_date], [y_position, y_position], marker='d', markersize=6, color=color)
 
-    # Place the annotation at the center of the line with multiple lines
-    if is_up:
-        annotation_y = 15
-    else:
-        annotation_y = -20
+    annotation_y = -20 if event["ForceAnnotation"] else 20
 
     ax.annotate(
         '\n'.join(lines),
@@ -101,34 +99,62 @@ def plot_event(event, events_on_same_line, is_up):
         ha='center',
         va='center',
         bbox=dict(
-            boxstyle='round',
-            facecolor='w',
-            edgecolor='black',
+            boxstyle='round,pad=0.5',
+            facecolor='white',
+            edgecolor='gray',
+            alpha=0.7
         ),
         arrowprops=dict(
-            arrowstyle='->',
-            connectionstyle='arc3,rad=0.5',
-            color='black')
+            arrowstyle='-',
+            connectionstyle='arc3,rad=0.3',
+            color='black'
+        )
     )
 
 
-def setup_plot():
+def setup_plot(y_lim):
+    plt.rcParams['font.family'] = 'Arial'
+
+    # Define a list of year-start dates based on your existing code
+    min_year = timeline_data[0]["StartDate"].year
+    max_year = max(row["EndDate"].year for row in timeline_data) + 1
+    year_range = range(min_year, max_year)
+    # Draw vertical lines representing the start of years
+    for year in year_range:
+        ax.axvline(date2num(datetime.datetime(year, 1, 1)), color='gray', linestyle=':', label=f'Year {year}')
+
+    # Set the y-limits based on your data
+    plt.ylim(*y_lim)
+
+    # Shade the background above zero in green and below in red
+    ax.fill_between(
+        [date2num(datetime.datetime(min_year, 1, 1)), date2num(datetime.datetime(max_year, 1, 1))],
+        0,
+        y_lim[0],
+        color='tomato',
+        alpha=0.15
+    )
+    ax.fill_between(
+        [date2num(datetime.datetime(min_year, 1, 1)), date2num(datetime.datetime(max_year, 1, 1))],
+        0,
+        y_lim[1],
+        color='seagreen',
+        alpha=0.15
+    )
+
     # Define a list of year-start dates based on your existing code
     min_year = timeline_data[0]["StartDate"].year
     max_year = max(row["EndDate"].year for row in timeline_data) + 1
     year_range = range(min_year, max_year)
     year_start_dates = [date2num(datetime.datetime(year, 1, 1)) for year in year_range]
-    # Draw vertical lines representing the start of years
-    for year in year_range:
-        ax.axvline(date2num(datetime.datetime(year, 1, 1)), color='y', linestyle=':', label=f'Year {year}')
 
     # Add x ticks with year labels
     ax.xaxis.set_major_locator(plt.FixedLocator(year_start_dates))
     year_format = DateFormatter('%Y')
     ax.xaxis.set_major_formatter(year_format)
-    # Hide the y-axis ticks
-    y_ticks = [-2, 0, 2.5]  # Adjust the positions as needed
-    y_tick_labels = ['Bad', 'Neutral', 'Good']
+    # Set y-axis ticks
+    y_ticks = [-2, 0, 2.5]
+    y_tick_labels = ['Negative', 'Neutral', 'Positive']
 
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(y_tick_labels)
@@ -139,33 +165,21 @@ def setup_plot():
     # Adjust the figure size and labels
     plt.gcf().autofmt_xdate()
     plt.xlabel('Years of My Life')
-    plt.title("Timeline of My Life\n\n")
+    plt.ylabel('Sentiment')
+    plt.title("My Life Timeline", fontsize=16)
     plt.grid(visible=False)
 
 
 def plot_timeline_data(timeline_data):
     # Sort events by start date
-    timeline_data.sort(key=lambda x: x['StartDate'])
-    timeline_data.sort(key=lambda x: abs(x['Position']))
+    timeline_data.sort(key=lambda x: (abs(x['Position']), x['StartDate'], x['EndDate']))
 
     # Iterate over the list of events to plot them
-    annotation_is_up = True
     for i, event in enumerate(timeline_data):
-        annotation_is_up = not annotation_is_up
-        events_on_same_line = 0
-
-        # Check for overlapping events
-        for j, other_event in enumerate(timeline_data):
-            if j != i:
-                    if (
-                            (event['StartDate'] <= other_event['EndDate'] and event['EndDate'] >= other_event['StartDate'])
-                            or (other_event['StartDate'] <= event['EndDate'] and other_event['EndDate'] >= event['StartDate'])
-                    ):
-                        events_on_same_line += 1
-
-        plot_event(event, events_on_same_line, annotation_is_up)
+        plot_event(event)
 
     # Save the visualization as an image (optional)
+    plt.tight_layout()
     plt.savefig('timeline.png')
     # Display the visualization
     plt.show()
@@ -176,8 +190,8 @@ fig, ax = plt.subplots()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # Read the CSV file into a list of events
-    timeline_data = read_timeline_data('real_timeline_data.csv')
-    setup_plot()
+    timeline_data, y_lim = read_timeline_data('real_timeline_data.csv')
+    setup_plot(y_lim)
     plot_timeline_data(timeline_data)
 
 
