@@ -1,8 +1,31 @@
-EventName,StartDate,EndDate,Position
-Event 1,2001-01-01,2001-01-01,1
-Event 2,2023-01-01,2023-01-01,-1
-Event 3,2022-01-01,2023-01-01,1
-Event 4,2022-01-01,2023-01-01,1
-Event 5,2023-01-01,2023-01-01,-1
-Event 6,2022-01-01,2023-01-01,-1
-Event 7,2021-01-01,2022-01-01,-1
+EventName,StartDate,EndDate,Category,Valence,ForceAnnotation
+Event 1,2001-01-01,2001-01-01,Project 1,1
+Event 2,2002-01-01,2003-01-01,Project 2,1
+Event 3,2002-01-01,2020-01-01,Project 3,1
+Event 4,2005-01-01,2007-01-01,Project 4,-1
+Event 5,2006-01-01,2007-01-01,Project 5,-1
+Event 6,2008-01-01,2008-01-01,Project 6,1,1
+Event 7,2004-01-01,2006-01-01,Project 1,1
+Event 8,2003-01-01,2007-01-01,Project 2,-1
+Event 9,2010-01-01,2010-01-01,Project 3,-1
+Event 10,2011-01-01,2016-01-01,Project 4,1
+Event 11,2012-01-01,2015-01-01,Project 5,1
+Event 12,2013-01-01,2014-01-01,Project 1,0
+Event 13,2014-01-01,2014-01-01,Project 2,-1
+Event 14,2015-01-01,2018-01-01,Project 3,1
+Event 15,2015-01-01,2017-01-01,Project 4,1
+Event 16,2016-01-01,2019-01-01,Project 1,-1
+Event 17,2016-01-01,2017-01-01,Project 2,1,1
+Event 18,2017-01-01,2017-01-01,Project 3,1,1
+Event 19,2018-01-01,2020-01-01,Project 1,-1
+Event 20,2018-01-01,2022-01-01,Project 2,1,1
+Event 21,2017-01-01,2019-01-01,Project 1,-1,1
+Event 22,2018-01-01,2020-01-01,Project 1,-1
+Event 23,2019-01-01,2019-01-01,Project 2,1
+Event 24,2019-01-01,2020-01-01,Project 3,1
+Event 25,2019-01-01,2021-01-01,Project 4,1
+Event 26,2020-01-01,2022-01-01,Project 5,-1
+Event 27,2020-01-01,2021-01-01,Project 6,-1
+Event 28,2021-01-01,2023-01-01,Project 1,-1
+Event 29,2020-01-01,2023-01-01,Project 2,1
+Event 30,2022-01-01,2023-01-01,Project 3,-1

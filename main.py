@@ -15,14 +15,13 @@ def read_timeline_data(filename):
     events = []
     colors = [
         "#FF6B6B",  # Coral
-        "#FFD700",  # Gold
         "#1E90FF",  # Dodger Blue
-        "#FFA07A",  # Light Salmon
         "#FF69B4",  # Hot Pink
         "#48D1CC",  # Medium Turquoise
-        "#98FB98",  # Pale Green
+        "#aa0098",  # Purple
         "#00BFFF",  # Deep Sky Blue
-        "#FFA500",  # Orange
+        "#00A500",  # Green
+        "#FFA07A",  # Light Salmon
     ]
 
     colors_count = len(colors)
@@ -67,7 +66,12 @@ def read_timeline_data(filename):
     for category in categories:
         events_in_category = [e for e in events if e['Category'] == category]
         for idx, event in enumerate(events_in_category):
-            event["Color"] = darken_color(event["Color"], idx * (1/(len(events_in_category)//2)))
+            event["Color"] = darken_color(
+                event["Color"],
+                idx/3 * (1 / len(events_in_category))
+            )
+
+
 
     y_lim = -(len(negative_positions)+1), len(positive_positions)+1
     return events, y_lim
@@ -190,8 +194,6 @@ fig, ax = plt.subplots()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # Read the CSV file into a list of events
-    timeline_data, y_lim = read_timeline_data('real_timeline_data.csv')
+    timeline_data, y_lim = read_timeline_data('timeline_data.csv')
     setup_plot(y_lim)
     plot_timeline_data(timeline_data)
-
-
