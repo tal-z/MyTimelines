@@ -152,41 +152,61 @@ def setup_plot(y_lim):
     year_range = range(min_year, max_year)
     year_start_dates = [date2num(datetime.datetime(year, 1, 1)) for year in year_range]
 
-    # Add x ticks with year labels
-    ax.xaxis.set_major_locator(plt.FixedLocator(year_start_dates))
-    year_format = DateFormatter('%Y')
-    ax.xaxis.set_major_formatter(year_format)
-    # Set y-axis ticks
-    y_ticks = [-2, 0, 2.5]
-    y_tick_labels = ['Negative', 'Neutral', 'Positive']
-
-    ax.set_yticks(y_ticks)
-    ax.set_yticklabels(y_tick_labels)
     # Draw a horizontal line down the center
     center_position = 0  # Adjust the position as needed
     ax.axhline(center_position, color='k', linestyle='--', label='Center Line')
 
-    # Adjust the figure size and labels
+    # Adjust the figure size, labels, and margins
     plt.gcf().autofmt_xdate()
     plt.xlabel('Years of My Life')
     plt.ylabel('Sentiment')
     plt.title("My Life Timeline", fontsize=16)
     plt.grid(visible=False)
+    plt.margins(x=0, y=0)
+    # Set x-axis ticks with year labels
+    ax.xaxis.set_major_locator(plt.FixedLocator(year_start_dates))
+    year_format = DateFormatter('%Y')
+    ax.xaxis.set_major_formatter(year_format)
+    # Set y-axis ticks
+    y_ticks = [y_lim[0]/2, 0, y_lim[1]/2]
+    y_tick_labels = ['Negative', 'Neutral', 'Positive']
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels(y_tick_labels)
 
 
 def plot_timeline_data(timeline_data):
-    # Sort events by start date
+    # Sort events by start date and their position
     timeline_data.sort(key=lambda x: (abs(x['Position']), x['StartDate'], x['EndDate']))
+
+    # Create a dictionary to keep track of the current vertical position of each line
+    line_positions = {}
 
     # Iterate over the list of events to plot them
     for i, event in enumerate(timeline_data):
+        start_date = event['StartDate']
+        end_date = event['EndDate']
+        y_position = event['Position']
+
+        # Check for overlaps and adjust the y_position
+        if y_position in line_positions:
+            # The vertical position is already occupied; find a new one
+            if y_position != 0:
+                while y_position in line_positions:
+                    y_position += .1
+            event['Position'] = y_position
+
+        # Update the line_positions dictionary
+        line_positions[y_position] = end_date
+
+        # Plot the event with the adjusted y_position
         plot_event(event)
 
     # Save the visualization as an image (optional)
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.savefig('timeline.png')
     # Display the visualization
     plt.show()
+
 
 # Create a Matplotlib figure and axis
 fig, ax = plt.subplots()
@@ -194,6 +214,6 @@ fig, ax = plt.subplots()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # Read the CSV file into a list of events
-    timeline_data, y_lim = read_timeline_data('timeline_data.csv')
-    setup_plot(y_lim)
+    timeline_data, y_limit = read_timeline_data('real_timeline_data.csv')
+    setup_plot(y_limit)
     plot_timeline_data(timeline_data)
